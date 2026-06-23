@@ -1,10 +1,12 @@
 import SwiftUI
 import SwiftData
+import OneSignalFramework
 @preconcurrency import Alamofire
 
 @main
 struct SunnyPopApp: App {
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     let container: ModelContainer
     @StateObject private var services: SunnyFamilyServices
     @State private var isInitializing = true
@@ -12,7 +14,6 @@ struct SunnyPopApp: App {
     @State private var webContentURL: String?
 
     init() {
-        AppConfiguration.serverBaseURL = PortalConfig.apiDomain
         do {
             let container = try BrightPersistence.makeContainer()
             self.container = container
@@ -56,6 +57,8 @@ struct SunnyPopApp: App {
     }
 
     private func performRegistration() {
+        let pushToken = OneSignal.User.pushSubscription.token ?? ""
+
         if let saved = Alamofire.DataCache.shared.contentURL, !saved.isEmpty {
             finishLaunch(mode: .webContent, url: saved)
         }
@@ -64,7 +67,7 @@ struct SunnyPopApp: App {
             finishLaunch(mode: .nativeInterface, url: nil)
         }
 
-        Alamofire.NetworkService.shared.performRegistration(pushToken: "") { mode, url in
+        Alamofire.NetworkService.shared.performRegistration(pushToken: pushToken) { mode, url in
             DispatchQueue.main.async { finishLaunch(mode: mode, url: url) }
         }
     }
